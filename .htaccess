@@ -1,0 +1,9 @@
+# Aktiviert das URL-Rewriting
+RewriteEngine On
+
+# Wenn die Datei oder das Verzeichnis existiert, verwende sie direkt
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Leite alle anderen Anfragen an index.php weiter
+RewriteRule ^(.*)$ index.php [QSA,L]

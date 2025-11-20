@@ -41,6 +41,13 @@ function handleTableApi(string $table) {
         switch ($method) {
             case 'GET':
                 if (isset($_GET['id'])) {
+                    if($_GET['id'] === 'all') {
+                        $stmt = $pdo->prepare("SELECT * FROM $table");
+                        $stmt->execute();
+                        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        echo json_encode($rows);
+                        exit;
+                    }
                     $id = (int)$_GET['id'];
                     $stmt = $pdo->prepare("SELECT * FROM $table WHERE $primaryKey = ?");
                     $stmt->execute([$id]);
