@@ -1,0 +1,266 @@
+openapi: 3.1.0
+info:
+  title: Lernplattform API
+  description: API für Lernende, Dozenten, Lehrbetriebe, Kurse und Länder
+  version: 1.0.0
+servers:
+  - url: http://localhost/api
+paths:
+  /countries/{id}:
+    get:
+      summary: Hole ein Land oder alle Länder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: all
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Country'
+    post:
+      summary: Erstelle ein neues Land
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Country'
+      responses:
+        '201':
+          description: Land erstellt
+    put:
+      summary: Aktualisiere ein Land
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Country'
+      responses:
+        '200':
+          description: Land aktualisiert
+    delete:
+      summary: Lösche ein Land
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Land gelöscht
+
+  /lehrbetriebe/{id}:
+    get:
+      summary: Hole einen Lehrbetrieb oder alle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: all
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Lehrbetrieb'
+
+  /lernende/{id}:
+    get:
+      summary: Hole einen Lernenden oder alle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: all
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Lernender'
+
+  /dozenten/{id}:
+    get:
+      summary: Hole einen Dozenten oder alle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: all
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dozent'
+
+  /kurse/{id}:
+    get:
+      summary: Hole einen Kurs oder alle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: all
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Kurs'
+
+components:
+  schemas:
+    Country:
+      type: object
+      properties:
+        id_country:
+          type: integer
+        country:
+          type: string
+      required:
+        - country
+
+    Lehrbetrieb:
+      type: object
+      properties:
+        id_lehrbetrieb:
+          type: integer
+        firma:
+          type: string
+        strasse:
+          type: string
+        plz:
+          type: string
+        ort:
+          type: string
+      required:
+        - firma
+
+    Lernender:
+      type: object
+      properties:
+        id_lernende:
+          type: integer
+        vorname:
+          type: string
+        nachname:
+          type: string
+        strasse:
+          type: string
+        plz:
+          type: string
+        ort:
+          type: string
+        nr_land:
+          type: integer
+        geschlecht:
+          type: string
+          enum: [m, w, d]
+        telefon:
+          type: string
+        handy:
+          type: string
+        email:
+          type: string
+        email_privat:
+          type: string
+        birthdate:
+          type: string
+          format: date
+      required:
+        - vorname
+        - nachname
+
+    Dozent:
+      type: object
+      properties:
+        id_dozent:
+          type: integer
+        vorname:
+          type: string
+        nachname:
+          type: string
+        strasse:
+          type: string
+        plz:
+          type: string
+        ort:
+          type: string
+        nr_land:
+          type: integer
+        geschlecht:
+          type: string
+          enum: [m, w, d]
+        telefon:
+          type: string
+        handy:
+          type: string
+        email:
+          type: string
+        birthdate:
+          type: string
+          format: date
+      required:
+        - vorname
+        - nachname
+
+    Kurs:
+      type: object
+      properties:
+        id_kurs:
+          type: integer
+        kursnummer:
+          type: string
+        kursthema:
+          type: string
+        inhalt:
+          type: string
+        nr_dozent:
+          type: integer
+        startdatum:
+          type: string
+          format: date
+        enddatum:
+          type: string
+          format: date
+        dauer:
+          type: integer
+      required:
+        - kursthema

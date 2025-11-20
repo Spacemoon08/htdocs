@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Ausbildungsverwaltung API Interaktiv</title>
+  <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin:0; background:#f4f6f8; color:#333; }
+    header { background:#003366; color:#fff; padding:15px 30px; display:flex; justify-content:space-between; align-items:center; }
+    header h1 { font-size:1.8rem; }
+    main { display:flex; flex-wrap:wrap; max-width:1400px; margin:20px auto; gap:20px; }
+    #doc { flex:2 1 700px; background:#fff; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); overflow:auto; padding:10px; }
+    #interactive { flex:1 1 300px; background:#fff; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); padding:20px; display:flex; flex-direction:column; gap:10px; }
+    h2 { margin-bottom:10px; color:#003366; }
+    label { margin-top:10px; font-weight:bold; }
+    input { padding:5px; margin-top:5px; border-radius:4px; border:1px solid #ccc; width:100%; }
+    button { margin-top:10px; background:#003366; color:#fff; border:none; padding:10px; border-radius:5px; cursor:pointer; font-size:14px; }
+    button:hover { background:#0055aa; }
+    pre { background:#f0f0f0; padding:10px; border-radius:5px; overflow:auto; max-height:400px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ausbildungsverwaltung API</h1>
+    <span>Version 1.0.0</span>
+  </header>
+
+  <main>
+    <!-- Redoc Dokumentation -->
+    <div id="doc">
+      <redoc spec-url="openapi.yaml"></redoc>
+    </div>
+
+    <!-- Interaktive API Sektion -->
+    <div id="interactive">
+      <h2>API Test</h2>
+
+      <!-- GET Lernende -->
+      <label>GET /lernende</label>
+      <button id="getLernende">Abrufen</button>
+
+      <!-- POST Lernende -->
+      <label>POST /lernende</label>
+      <input type="text" id="vorname" placeholder="Vorname">
+      <input type="text" id="nachname" placeholder="Nachname">
+      <input type="text" id="email" placeholder="Email">
+      <button id="postLernende">Erstellen</button>
+
+      <h3>Antwort:</h3>
+      <pre id="output">{}</pre>
+    </div>
+  </main>
+
+  <script>
+    const apiBase = 'http://localhost:8080/api';
+    const output = document.getElementById('output');
+
+    // GET Lernende
+    document.getElementById('getLernende').addEventListener('click', () => {
+      fetch(`${apiBase}/lernende`)
+        .then(res => res.json())
+        .then(data => output.textContent = JSON.stringify(data, null, 2))
+        .catch(err => output.textContent = `Fehler: ${err}`);
+    });
+
+    // POST Lernende
+    document.getElementById('postLernende').addEventListener('click', () => {
+      const vorname = document.getElementById('vorname').value;
+      const nachname = document.getElementById('nachname').value;
+      const email = document.getElementById('email').value;
+
+      fetch(`${apiBase}/lernende`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vorname, nachname, email })
+      })
+      .then(res => res.json())
+      .then(data => output.textContent = JSON.stringify(data, null, 2))
+      .catch(err => output.textContent = `Fehler: ${err}`);
+    });
+
+    // Redoc init
+    Redoc.init('openapi.yaml', { scrollYOffset: () => document.querySelector('header').offsetHeight + 10 });
+  </script>
+</body>
+</html>
+
+
+
