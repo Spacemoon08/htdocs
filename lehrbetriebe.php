@@ -20,7 +20,7 @@ try {
             // prefer query ?id=1 (or change to id_dozenten if you use that)
             if (isset($_GET['id'])) {
                 $id = (int) $_GET['id'];
-                $stmt = $pdo->prepare('SELECT * FROM tbl_countries WHERE id_country = ?');
+                $stmt = $pdo->prepare('SELECT * FROM tbl_lehrbetriebe WHERE id_lehrbetrieb = ?');
                 $stmt->execute([$id]);
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($row) {
@@ -36,27 +36,30 @@ try {
             echo json_encode(['error' => 'id is required']);
             break;
         case 'POST':
-            $errors = validateTableData($pdo, 'tbl_countries', $input);
+            $errors = validateTableData($pdo, 'tbl_lehrbetriebe', $input);
             if (!empty($errors)) {
                 http_response_code(400);
                 echo json_encode(['errors' => $errors]);
                 exit;
             }
-            $sql = 'INSERT INTO tbl_countries (country)
-                    VALUES (?)';
+            $sql = 'INSERT INTO tbl_lehrbetriebe (firma, strasse, plz, ort)
+                    VALUES (?, ?, ?, ?)';
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                $input['country'],
+                $input['firma'],
+                $input['strasse'],
+                $input['plz'],
+                $input['ort'],
             ]);
             http_response_code(201);
             echo json_encode([
                 'id' => $pdo->lastInsertId(),
-                'message' => 'Country created successfully'
+                'message' => 'Lehrbetrieb created successfully'
             ]);
             break;
         case 'PUT':
             // Require the dozents ID
-            $errors = validateTableData($pdo, 'tbl_countries', $input);
+            $errors = validateTableData($pdo, 'tbl_lehrbetriebe', $input);
             if (!empty($errors)) {
                 http_response_code(400);
                 echo json_encode(['errors' => $errors]);
@@ -78,23 +81,23 @@ try {
                 exit;
             }
             // Build and execute SQL
-            $sql = 'UPDATE tbl_countries SET ' . implode(', ', $fields) . ' WHERE id_country = ?';
+            $sql = 'UPDATE tbl_lehrbetriebe SET ' . implode(', ', $fields) . ' WHERE id_lehrbetrieb = ?';
             $params[] = $input['id'];
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             // If no rows were affected
             if ($stmt->rowCount() === 0) {
                 http_response_code(404);
-                echo json_encode(['error' => 'Country not found or no changes made']);
+                echo json_encode(['error' => 'Lehrbetrieb not found or no changes made']);
                 exit;
             }
             // Fetch and return the updated record
-            $stmt = $pdo->prepare('SELECT * FROM tbl_countries WHERE id_country = ?');
+            $stmt = $pdo->prepare('SELECT * FROM tbl_lehrbetriebe WHERE id_lehrbetrieb = ?');
             $stmt->execute([$input['id']]);
             $updated = $stmt->fetch(PDO::FETCH_ASSOC);
             echo json_encode([
-                'message' => 'Country updated successfully',
-                'updated_country' => $updated
+                'message' => 'Lehrbetrieb updated successfully',
+                'updated_lehrbetrieb' => $updated
             ]);
             break;
         case 'DELETE':
@@ -103,15 +106,15 @@ try {
                 echo json_encode(['error' => 'ID is required']);
                 exit;
             }
-            $stmt = $pdo->prepare('DELETE FROM tbl_countries WHERE id_country = ?');
+            $stmt = $pdo->prepare('DELETE FROM tbl_lehrbetriebe WHERE id_lehrbetrieb = ?');
             $stmt->execute([$_GET['id']]);
             
             if ($stmt->rowCount() === 0) {
                 http_response_code(404);
-                echo json_encode(['error' => 'Country not found']);
+                echo json_encode(['error' => 'Lehrbetrieb not found']);
                 exit;
             }
-            echo json_encode(['message' => 'Country deleted successfully']);
+            echo json_encode(['message' => 'Lehrbetrieb deleted successfully']);
             break;
         default:
             http_response_code(405);
