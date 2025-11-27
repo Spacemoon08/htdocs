@@ -12,8 +12,6 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 
-
-
 function handleTableApi(string $table) {
     // Database connection
     $pdo = new PDO("mysql:host=localhost;dbname=kursverwaltung;charset=utf8mb4", "root", "");
@@ -28,7 +26,6 @@ function handleTableApi(string $table) {
         echo json_encode(['error' => "Table '$table' does not exist"]);
         exit;
     }
-
     // Get primary key
     $primaryKey = $pdo->query("
         SELECT COLUMN_NAME
@@ -36,7 +33,6 @@ function handleTableApi(string $table) {
         WHERE TABLE_NAME = '$table'
         AND CONSTRAINT_NAME = 'PRIMARY';
     ")->fetchColumn();
-
     try {
         switch ($method) {
             case 'GET':
@@ -63,7 +59,6 @@ function handleTableApi(string $table) {
                 http_response_code(400);
                 echo json_encode(['error' => 'id is required']);
                 break;
-
             case 'POST':
                 $errors = validateTableData($pdo, $table, $input);
                 $fields = $placeholders = $params = [];
@@ -119,7 +114,6 @@ function handleTableApi(string $table) {
                 $updated = $stmt->fetch(PDO::FETCH_ASSOC);
                 echo json_encode(['message' => "$table updated successfully", 'updated' => $updated]);
                 break;
-
             case 'DELETE':
                 if (!isset($_GET['id'])) {
                     http_response_code(400);
@@ -135,15 +129,14 @@ function handleTableApi(string $table) {
                 }
                 echo json_encode(['message' => "$table deleted successfully"]);
                 break;
-
             default:
                 http_response_code(405);
                 echo json_encode(['error' => 'Method not allowed']);
                 break;
         }
     } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
+        http_response_code(400);
+        echo json_encode(['error' => "something went wrong"]);
     }
 }
 ?>

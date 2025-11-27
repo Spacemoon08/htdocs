@@ -1,266 +1,397 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
-  title: Lernplattform API
-  description: API für Lernende, Dozenten, Lehrbetriebe, Kurse und Länder
-  version: 1.0.0
+  title: Kursverwaltung API
+  version: "1.0.0"
 servers:
-  - url: http://localhost/api
+  - url: http://localhost
 paths:
-  /countries/{id}:
+  # ==================== tbl_countries ====================
+  /countries:
     get:
-      summary: Hole ein Land oder alle Länder
+      summary: Länder abrufen
       parameters:
-        - name: id
-          in: path
-          required: true
+        - in: query
+          name: id
           schema:
             type: string
-            example: all
+          description: "ID des Landes oder 'all' für alle"
       responses:
-        '200':
-          description: Erfolgreiche Abfrage
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Country'
+        '200': { description: Erfolgreich }
     post:
-      summary: Erstelle ein neues Land
+      summary: Neues Land erstellen
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Country'
-      responses:
-        '201':
-          description: Land erstellt
+              type: object
+              properties:
+                country: { type: string }
+      responses: { '201': { description: Land erstellt } }
     put:
-      summary: Aktualisiere ein Land
+      summary: Land aktualisieren
       parameters:
-        - name: id
-          in: path
+        - in: query
+          name: id
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Country'
-      responses:
-        '200':
-          description: Land aktualisiert
+              type: object
+              properties:
+                country: { type: string }
+      responses: { '200': { description: Aktualisiert } }
     delete:
-      summary: Lösche ein Land
+      summary: Land löschen
       parameters:
-        - name: id
-          in: path
+        - in: query
+          name: id
           required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Land gelöscht
+          schema: { type: integer }
+      responses: { '200': { description: Gelöscht } }
 
-  /lehrbetriebe/{id}:
+  # ==================== tbl_lehrbetriebe ====================
+  /lehrbetriebe:
     get:
-      summary: Hole einen Lehrbetrieb oder alle
+      summary: Alle Lehrbetriebe abrufen
       parameters:
-        - name: id
-          in: path
+        - in: query
+          name: id
+          schema: { type: string }
+      responses: { '200': { description: Erfolgreich } }
+    post:
+      summary: Neuen Lehrbetrieb erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firma: { type: string }
+                strasse: { type: string }
+                plz: { type: string }
+                ort: { type: string }
+      responses: { '201': { description: Lehrbetrieb erstellt } }
+    put:
+      summary: Lehrbetrieb aktualisieren
+      parameters:
+        - in: query
+          name: id
           required: true
-          schema:
-            type: string
-            example: all
-      responses:
-        '200':
-          description: Erfolgreiche Abfrage
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Lehrbetrieb'
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firma: { type: string }
+                strasse: { type: string }
+                plz: { type: string }
+                ort: { type: string }
+      responses: { '200': { description: Aktualisiert } }
+    delete:
+      summary: Lehrbetrieb löschen
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Gelöscht } }
 
-  /lernende/{id}:
+  # ==================== tbl_lernende ====================
+  /lernende:
     get:
-      summary: Hole einen Lernenden oder alle
+      summary: Alle Lernende abrufen
       parameters:
-        - name: id
-          in: path
+        - in: query
+          name: id
+          schema: { type: string }
+          description: "ID des Lernenden oder 'all'"
+      responses: { '200': { description: Erfolgreich } }
+    post:
+      summary: Lernenden erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vorname: { type: string }
+                nachname: { type: string }
+                strasse: { type: string }
+                plz: { type: string }
+                ort: { type: string }
+                nr_land: { type: integer }
+                geschlecht: { type: string, enum: ['m','w','d'] }
+                telefon: { type: string }
+                handy: { type: string }
+                email: { type: string }
+                email_privat: { type: string }
+                birthdate: { type: string, format: date }
+      responses: { '201': { description: Lernender erstellt } }
+    put:
+      summary: Lernenden aktualisieren
+      parameters:
+        - in: query
+          name: id
           required: true
-          schema:
-            type: string
-            example: all
-      responses:
-        '200':
-          description: Erfolgreiche Abfrage
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Lernender'
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vorname: { type: string }
+                nachname: { type: string }
+                strasse: { type: string }
+                plz: { type: string }
+                ort: { type: string }
+                nr_land: { type: integer }
+                geschlecht: { type: string, enum: ['m','w','d'] }
+                telefon: { type: string }
+                handy: { type: string }
+                email: { type: string }
+                email_privat: { type: string }
+                birthdate: { type: string, format: date }
+      responses: { '200': { description: Aktualisiert } }
+    delete:
+      summary: Lernenden löschen
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Gelöscht } }
 
-  /dozenten/{id}:
+  # ==================== tbl_dozenten ====================
+  /dozenten:
     get:
-      summary: Hole einen Dozenten oder alle
+      summary: Alle Dozenten abrufen
       parameters:
-        - name: id
-          in: path
+        - in: query
+          name: id
+          schema: { type: string }
+      responses: { '200': { description: Erfolgreich } }
+    post:
+      summary: Dozenten erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vorname: { type: string }
+                nachname: { type: string }
+                strasse: { type: string }
+                plz: { type: string }
+                ort: { type: string }
+                nr_land: { type: integer }
+                geschlecht: { type: string, enum: ['m','w','d'] }
+                telefon: { type: string }
+                handy: { type: string }
+                email: { type: string }
+                birthdate: { type: string, format: date }
+      responses: { '201': { description: Dozent erstellt } }
+    put:
+      summary: Dozent aktualisieren
+      parameters:
+        - in: query
+          name: id
           required: true
-          schema:
-            type: string
-            example: all
-      responses:
-        '200':
-          description: Erfolgreiche Abfrage
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Dozent'
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vorname: { type: string }
+                nachname: { type: string }
+                strasse: { type: string }
+                plz: { type: string }
+                ort: { type: string }
+                nr_land: { type: integer }
+                geschlecht: { type: string, enum: ['m','w','d'] }
+                telefon: { type: string }
+                handy: { type: string }
+                email: { type: string }
+                birthdate: { type: string, format: date }
+      responses: { '200': { description: Aktualisiert } }
+    delete:
+      summary: Dozent löschen
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Gelöscht } }
 
-  /kurse/{id}:
+  # ==================== tbl_lehrbetriebe_lernende ====================
+  /lehrbetriebe_lernende:
     get:
-      summary: Hole einen Kurs oder alle
+      summary: Alle Lehrbetriebe-Lernende abrufen
       parameters:
-        - name: id
-          in: path
+        - in: query
+          name: id
+          schema: { type: string }
+      responses: { '200': { description: Erfolgreich } }
+    post:
+      summary: Neue Lehrbetrieb-Lernende Beziehung erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nr_lehrbetrieb: { type: integer }
+                nr_lernende: { type: integer }
+                start: { type: string, format: date }
+                ende: { type: string, format: date }
+                beruf: { type: string }
+      responses: { '201': { description: Beziehung erstellt } }
+    put:
+      summary: Beziehung aktualisieren
+      parameters:
+        - in: query
+          name: id
           required: true
-          schema:
-            type: string
-            example: all
-      responses:
-        '200':
-          description: Erfolgreiche Abfrage
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Kurs'
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nr_lehrbetrieb: { type: integer }
+                nr_lernende: { type: integer }
+                start: { type: string, format: date }
+                ende: { type: string, format: date }
+                beruf: { type: string }
+      responses: { '200': { description: Aktualisiert } }
+    delete:
+      summary: Beziehung löschen
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Gelöscht } }
 
-components:
-  schemas:
-    Country:
-      type: object
-      properties:
-        id_country:
-          type: integer
-        country:
-          type: string
-      required:
-        - country
+  # ==================== tbl_kurse ====================
+  /kurse:
+    get:
+      summary: Alle Kurse abrufen
+      parameters:
+        - in: query
+          name: id
+          schema: { type: string }
+      responses: { '200': { description: Erfolgreich } }
+    post:
+      summary: Kurs erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kursnummer: { type: string }
+                kursthema: { type: string }
+                inhalt: { type: string }
+                nr_dozent: { type: integer }
+                startdatum: { type: string, format: date }
+                enddatum: { type: string, format: date }
+                dauer: { type: integer }
+      responses: { '201': { description: Kurs erstellt } }
+    put:
+      summary: Kurs aktualisieren
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kursnummer: { type: string }
+                kursthema: { type: string }
+                inhalt: { type: string }
+                nr_dozent: { type: integer }
+                startdatum: { type: string, format: date }
+                enddatum: { type: string, format: date }
+                dauer: { type: integer }
+      responses: { '200': { description: Aktualisiert } }
+    delete:
+      summary: Kurs löschen
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Gelöscht } }
 
-    Lehrbetrieb:
-      type: object
-      properties:
-        id_lehrbetrieb:
-          type: integer
-        firma:
-          type: string
-        strasse:
-          type: string
-        plz:
-          type: string
-        ort:
-          type: string
-      required:
-        - firma
-
-    Lernender:
-      type: object
-      properties:
-        id_lernende:
-          type: integer
-        vorname:
-          type: string
-        nachname:
-          type: string
-        strasse:
-          type: string
-        plz:
-          type: string
-        ort:
-          type: string
-        nr_land:
-          type: integer
-        geschlecht:
-          type: string
-          enum: [m, w, d]
-        telefon:
-          type: string
-        handy:
-          type: string
-        email:
-          type: string
-        email_privat:
-          type: string
-        birthdate:
-          type: string
-          format: date
-      required:
-        - vorname
-        - nachname
-
-    Dozent:
-      type: object
-      properties:
-        id_dozent:
-          type: integer
-        vorname:
-          type: string
-        nachname:
-          type: string
-        strasse:
-          type: string
-        plz:
-          type: string
-        ort:
-          type: string
-        nr_land:
-          type: integer
-        geschlecht:
-          type: string
-          enum: [m, w, d]
-        telefon:
-          type: string
-        handy:
-          type: string
-        email:
-          type: string
-        birthdate:
-          type: string
-          format: date
-      required:
-        - vorname
-        - nachname
-
-    Kurs:
-      type: object
-      properties:
-        id_kurs:
-          type: integer
-        kursnummer:
-          type: string
-        kursthema:
-          type: string
-        inhalt:
-          type: string
-        nr_dozent:
-          type: integer
-        startdatum:
-          type: string
-          format: date
-        enddatum:
-          type: string
-          format: date
-        dauer:
-          type: integer
-      required:
-        - kursthema
+  # ==================== tbl_kurse_lernende ====================
+  /kurse_lernende:
+    get:
+      summary: Alle Kurse-Lernende abrufen
+      parameters:
+        - in: query
+          name: id
+          schema: { type: string }
+      responses: { '200': { description: Erfolgreich } }
+    post:
+      summary: Kurs-Lernende Beziehung erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nr_kurs: { type: integer }
+                nr_lernende: { type: integer }
+                note: { type: number, format: float }
+      responses: { '201': { description: Beziehung erstellt } }
+    put:
+      summary: Beziehung aktualisieren
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nr_kurs: { type: integer }
+                nr_lernende: { type: integer }
+                note: { type: number, format: float }
+      responses: { '200': { description: Aktualisiert } }
+    delete:
+      summary: Beziehung löschen
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema: { type: integer }
+      responses: { '200': { description: Gelöscht } }
