@@ -1,4 +1,15 @@
 <?php
+/**
+ * API handler for table CRUD operations.
+ *
+ * Handles GET, POST, PUT, DELETE for mapped database tables.
+ *
+ * @package KursverwaltungAPI
+ * @author -
+ * @license MIT
+ * @see validate_input.php
+ */
+
 // Input validation / helper functions (validateTableData etc.)
 include 'validate_input.php';
 
@@ -14,17 +25,22 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 /**
- * Main table API function.
+ * Handle table API requests (CRUD).
  *
- * Parameters:
- * - $table: the database table name (e.g. 'tbl_lernende')
- *
- * Behavior:
+ * Accepts:
  * - GET  /?id=all  -> return all rows
  * - GET  /?id=1    -> return single row by primary key
  * - POST /         -> create new row (JSON body)
  * - PUT  /?id=1    -> update row (JSON body)
  * - DELETE /?id=1  -> delete row
+ *
+ * Notes:
+ * - Expects $_GET['id'] to be set by the front-controller (index.php).
+ * - Uses prepared statements and a column whitelist loaded via DESCRIBE.
+ *
+ * @param string $table Database table name (e.g. 'tbl_lernende')
+ * @return void Outputs JSON and exits; sets appropriate HTTP status codes
+ * @throws PDOException On database connection / query errors
  */
 function handleTableApi(string $table) {
     // Create DB connection using local XAMPP defaults
