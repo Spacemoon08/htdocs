@@ -8,10 +8,16 @@ export function NestedFormModal(props: {
     item: any;
     onSave: (data: any) => void;
     onCancel: () => void;
+    countries?: any[];
+    lehrbetriebe?: any[];
+    lernende?: any[];
+    dozenten?: any[];
+    kurse?: any[];
 }) {
-    const { view, item, onSave, onCancel } = props;
+    const { view, item, onSave, onCancel, countries = [], lehrbetriebe = [], lernende = [], dozenten = [], kurse = [] } = props;
     const [formData, setFormData] = useState<any>(item ?? {});
 
+    // Complete field definitions matching FormModal
     const nestedFields: Record<string, Field[]> = {
         countries: [
             { name: "country", label: "Land", type: "text", required: true },
@@ -25,6 +31,14 @@ export function NestedFormModal(props: {
         lernende: [
             { name: "vorname", label: "Vorname", type: "text", required: true },
             { name: "nachname", label: "Nachname", type: "text", required: true },
+            {
+                name: "nr_land",
+                label: "Land",
+                type: "select",
+                options: countries,
+                valueKey: "id_country",
+                labelKey: "country",
+            },
         ],
         dozenten: [
             { name: "vorname", label: "Vorname", type: "text", required: true },
@@ -32,6 +46,54 @@ export function NestedFormModal(props: {
         ],
         kurse: [
             { name: "kursthema", label: "Kursthema", type: "text" },
+            {
+                name: "nr_dozent",
+                label: "Dozent",
+                type: "select",
+                options: dozenten,
+                valueKey: "id_dozent",
+                labelKey: "nachname",
+            },
+        ],
+        lehrbetriebe_lernende: [
+            {
+                name: "nr_lehrbetrieb",
+                label: "Lehrbetrieb",
+                type: "select",
+                options: lehrbetriebe,
+                valueKey: "id_lehrbetrieb",
+                labelKey: "firma",
+            },
+            {
+                name: "nr_lernende",
+                label: "Lernender",
+                type: "select",
+                options: lernende,
+                valueKey: "id_lernende",
+                labelKey: "nachname",
+            },
+            { name: "start", label: "Start", type: "date" },
+            { name: "ende", label: "Ende", type: "date" },
+            { name: "beruf", label: "Beruf", type: "text" },
+        ],
+        kurse_lernende: [
+            {
+                name: "nr_kurs",
+                label: "Kurs",
+                type: "select",
+                options: kurse,
+                valueKey: "id_kurs",
+                labelKey: "kursthema",
+            },
+            {
+                name: "nr_lernende",
+                label: "Lernender",
+                type: "select",
+                options: lernende,
+                valueKey: "id_lernende",
+                labelKey: "nachname",
+            },
+            { name: "note", label: "Note", type: "number" },
         ],
     };
 
@@ -39,7 +101,7 @@ export function NestedFormModal(props: {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
-            <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl">
+            <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl max-h-[90vh] overflow-hidden">
                 <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-teal-50">
                     <div>
                         <h3 className="text-xl font-bold text-gray-900">
@@ -57,24 +119,63 @@ export function NestedFormModal(props: {
                     </button>
                 </div>
 
-                <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+                <div className="p-5 space-y-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 180px)' }}>
                     {nestedFields[view]?.map((field) => (
                         <div key={field.name}>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 {field.label}
                                 {field.required && <span className="text-red-500 ml-1">*</span>}
                             </label>
-                            <input
-                                type={field.type}
-                                value={formData[field.name] ?? ""}
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        [field.name]: e.target.value,
-                                    })
-                                }
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-gray-900 transition-all duration-150"
-                            />
+
+                            {field.type === "select" ? (
+                                <select
+                                    value={formData[field.name] ?? ""}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            [field.name]: e.target.value,
+                                        })
+                                    }
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-gray-900 transition-all duration-150"
+                                >
+                                    <option value="">Bitte wählen...</option>
+                                    {field.options?.map((opt: any) => {
+                                        const isPersonView = field.name === "nr_lernende" || field.name === "nr_dozent";
+                                        const label = isPersonView
+                                            ? `${opt.vorname} ${opt.nachname}`
+                                            : opt[field.labelKey!];
+                                        return (
+                                            <option key={opt[field.valueKey!]} value={opt[field.valueKey!]}>
+                                                {label}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                            ) : field.type === "textarea" ? (
+                                <textarea
+                                    value={formData[field.name] ?? ""}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            [field.name]: e.target.value,
+                                        })
+                                    }
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-gray-900 transition-all duration-150"
+                                    rows={4}
+                                />
+                            ) : (
+                                <input
+                                    type={field.type}
+                                    value={formData[field.name] ?? ""}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            [field.name]: e.target.value,
+                                        })
+                                    }
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-gray-900 transition-all duration-150"
+                                />
+                            )}
                         </div>
                     ))}
                 </div>

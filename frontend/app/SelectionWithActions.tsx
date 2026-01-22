@@ -9,8 +9,24 @@ export function SelectWithActions(props: {
     value: any;
     onChange: (value: any) => void;
     onRefresh: (newOptions: any[]) => void;
+    countries?: any[];
+    lehrbetriebe?: any[];
+    lernende?: any[];
+    dozenten?: any[];
+    kurse?: any[];
 }) {
-    const { field, value, onChange, onRefresh } = props;
+    const {
+        field,
+        value,
+        onChange,
+        onRefresh,
+        countries = [],
+        lehrbetriebe = [],
+        lernende = [],
+        dozenten = [],
+        kurse = []
+    } = props;
+
     const [showNestedForm, setShowNestedForm] = useState(false);
     const [editItem, setEditItem] = useState<any>(null);
 
@@ -103,6 +119,11 @@ export function SelectWithActions(props: {
                         setShowNestedForm(false);
                         setEditItem(null);
                     }}
+                    countries={countries}
+                    lehrbetriebe={lehrbetriebe}
+                    lernende={lernende}
+                    dozenten={dozenten}
+                    kurse={kurse}
                 />
             )}
         </>

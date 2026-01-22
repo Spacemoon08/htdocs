@@ -15,17 +15,42 @@ export interface Lernende {
     id_lernende: number;
     vorname: string;
     nachname: string;
+    strasse?: string;
+    plz?: string;
+    ort?: string;
+    nr_land?: number;
+    geschlecht?: 'm' | 'w' | 'd';
+    telefon?: string;
+    handy?: string;
+    email?: string;
+    email_privat?: string;
+    birthdate?: string;
 }
 
 export interface Dozent {
     id_dozent: number;
     vorname: string;
     nachname: string;
+    strasse?: string;
+    plz?: string;
+    ort?: string;
+    nr_land?: number;
+    geschlecht?: 'm' | 'w' | 'd';
+    telefon?: string;
+    handy?: string;
+    email?: string;
+    birthdate?: string;
 }
 
 export interface Kurs {
     id_kurs: number;
+    kursnummer?: string;
     kursthema?: string;
+    inhalt?: string;
+    nr_dozent?: number;
+    startdatum?: string;
+    enddatum?: string;
+    dauer?: number;
 }
 
 export interface LehrbetriebLernende {

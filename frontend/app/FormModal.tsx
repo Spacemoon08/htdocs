@@ -3,6 +3,7 @@ import { Save, X } from "lucide-react";
 import { ViewType, Field } from "./types";
 import { viewConfig } from "./config";
 import { SelectWithActions } from "./SelectionWithActions";
+import { getPrimaryKey } from "./api";
 
 export function FormModal(props: {
     view: ViewType;
@@ -44,84 +45,115 @@ export function FormModal(props: {
     const [localDozenten, setLocalDozenten] = useState(dozenten);
     const [localKurse, setLocalKurse] = useState(kurse);
 
-    const fields: Record<ViewType, Field[]> = {
-        countries: [
-            { name: "country", label: "Land", type: "text", required: true },
-        ],
-        lehrbetriebe: [
-            { name: "firma", label: "Firma", type: "text", required: true },
-            { name: "strasse", label: "Straße", type: "text" },
-            { name: "plz", label: "PLZ", type: "text" },
-            { name: "ort", label: "Ort", type: "text" },
-        ],
-        lernende: [
-            { name: "vorname", label: "Vorname", type: "text", required: true },
-            { name: "nachname", label: "Nachname", type: "text", required: true },
-            {
-                name: "nr_land",
-                label: "Land",
-                type: "select",
-                options: localCountries,
-                valueKey: "id_country",
-                labelKey: "country",
-            },
-        ],
-        dozenten: [
-            { name: "vorname", label: "Vorname", type: "text", required: true },
-            { name: "nachname", label: "Nachname", type: "text", required: true },
-        ],
-        kurse: [
-            { name: "kursthema", label: "Kursthema", type: "text" },
-            {
-                name: "nr_dozent",
-                label: "Dozent",
-                type: "select",
-                options: localDozenten,
-                valueKey: "id_dozent",
-                labelKey: "nachname",
-            },
-        ],
-        lehrbetriebe_lernende: [
-            {
-                name: "nr_lehrbetrieb",
-                label: "Lehrbetrieb",
-                type: "select",
-                options: localLehrbetriebe,
-                valueKey: "id_lehrbetrieb",
-                labelKey: "firma",
-            },
-            {
-                name: "nr_lernende",
-                label: "Lernender",
-                type: "select",
-                options: localLernende,
-                valueKey: "id_lernende",
-                labelKey: "nachname",
-            },
-            { name: "start", label: "Start", type: "date" },
-            { name: "ende", label: "Ende", type: "date" },
-            { name: "beruf", label: "Beruf", type: "text" },
-        ],
-        kurse_lernende: [
-            {
-                name: "nr_kurs",
-                label: "Kurs",
-                type: "select",
-                options: localKurse,
-                valueKey: "id_kurs",
-                labelKey: "kursthema",
-            },
-            {
-                name: "nr_lernende",
-                label: "Lernender",
-                type: "select",
-                options: localLernende,
-                valueKey: "id_lernende",
-                labelKey: "nachname",
-            },
-            { name: "note", label: "Note", type: "number" },
-        ],
+    // Define all expected fields for each view type
+    const viewFields: Record<ViewType, string[]> = {
+        countries: ["country"],
+        lehrbetriebe: ["firma", "strasse", "plz", "ort"],
+        lernende: ["vorname", "nachname", "strasse", "plz", "ort", "nr_land", "geschlecht", "telefon", "handy", "email", "email_privat", "birthdate"],
+        dozenten: ["vorname", "nachname", "strasse", "plz", "ort", "nr_land", "geschlecht", "telefon", "handy", "email", "birthdate"],
+        kurse: ["kursnummer", "kursthema", "inhalt", "nr_dozent", "startdatum", "enddatum", "dauer"],
+        lehrbetriebe_lernende: ["nr_lehrbetrieb", "nr_lernende", "start", "ende", "beruf"],
+        kurse_lernende: ["nr_kurs", "nr_lernende", "note"],
     };
+
+    // Field configuration for select fields and special types
+    const fieldConfig: Record<string, Partial<Field>> = {
+        nr_land: {
+            label: "Land",
+            type: "select",
+            options: localCountries,
+            valueKey: "id_country",
+            labelKey: "country",
+        },
+        nr_lehrbetrieb: {
+            label: "Lehrbetrieb",
+            type: "select",
+            options: localLehrbetriebe,
+            valueKey: "id_lehrbetrieb",
+            labelKey: "firma",
+        },
+        nr_lernende: {
+            label: "Lernender",
+            type: "select",
+            options: localLernende,
+            valueKey: "id_lernende",
+            labelKey: "nachname",
+        },
+        nr_dozent: {
+            label: "Dozent",
+            type: "select",
+            options: localDozenten,
+            valueKey: "id_dozent",
+            labelKey: "nachname",
+        },
+        nr_kurs: {
+            label: "Kurs",
+            type: "select",
+            options: localKurse,
+            valueKey: "id_kurs",
+            labelKey: "kursthema",
+        },
+        geschlecht: {
+            label: "Geschlecht",
+            type: "select",
+            options: [
+                { value: "m", label: "Männlich" },
+                { value: "w", label: "Weiblich" },
+                { value: "d", label: "Divers" }
+            ],
+            valueKey: "value",
+            labelKey: "label",
+        },
+        start: { label: "Start", type: "date" },
+        ende: { label: "Ende", type: "date" },
+        startdatum: { label: "Startdatum", type: "date" },
+        enddatum: { label: "Enddatum", type: "date" },
+        birthdate: { label: "Geburtsdatum", type: "date" },
+        note: { label: "Note", type: "number" },
+        dauer: { label: "Dauer (Tage)", type: "number" },
+        vorname: { label: "Vorname", type: "text", required: true },
+        nachname: { label: "Nachname", type: "text", required: true },
+        country: { label: "Land", type: "text", required: true },
+        firma: { label: "Firma", type: "text", required: true },
+        strasse: { label: "Straße", type: "text" },
+        plz: { label: "PLZ", type: "text" },
+        ort: { label: "Ort", type: "text" },
+        telefon: { label: "Telefon", type: "text" },
+        handy: { label: "Handy", type: "text" },
+        email: { label: "E-Mail", type: "email" },
+        email_privat: { label: "E-Mail Privat", type: "email" },
+        kursnummer: { label: "Kursnummer", type: "text" },
+        kursthema: { label: "Kursthema", type: "text" },
+        inhalt: { label: "Inhalt", type: "textarea" },
+        beruf: { label: "Beruf", type: "text" },
+    };
+
+    // Generate fields based on view type
+    const generateFields = (): Field[] => {
+        const expectedFields = viewFields[view];
+
+        return expectedFields.map(key => {
+            const config = fieldConfig[key];
+
+            // Generate label from key if not in config
+            const defaultLabel = key
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+
+            return {
+                name: key,
+                label: config?.label || defaultLabel,
+                type: config?.type || "text",
+                required: config?.required,
+                options: config?.options,
+                valueKey: config?.valueKey,
+                labelKey: config?.labelKey,
+            } as Field;
+        });
+    };
+
+    const fields = generateFields();
 
     const handleSubmit = () => {
         onSave(formData);
@@ -167,7 +199,7 @@ export function FormModal(props: {
                 </div>
 
                 <div className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-180px)]">
-                    {fields[view].map((field) => (
+                    {fields.map((field) => (
                         <div key={field.name}>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 {field.label}
@@ -175,17 +207,37 @@ export function FormModal(props: {
                             </label>
 
                             {field.type === "select" ? (
-                                <SelectWithActions
-                                    field={field}
-                                    value={formData[field.name] ?? ""}
-                                    onChange={(value) =>
-                                        setFormData({
-                                            ...formData,
-                                            [field.name]: value,
-                                        })
-                                    }
-                                    onRefresh={(newOptions) => handleRefresh(field.name, newOptions)}
-                                />
+                                field.name === "geschlecht" ? (
+                                    <select
+                                        value={formData[field.name] ?? ""}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                [field.name]: e.target.value,
+                                            })
+                                        }
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 transition-all duration-150"
+                                    >
+                                        <option value="">Bitte wählen...</option>
+                                        {field.options?.map((opt: any) => (
+                                            <option key={opt[field.valueKey!]} value={opt[field.valueKey!]}>
+                                                {opt[field.labelKey!]}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <SelectWithActions
+                                        field={field}
+                                        value={formData[field.name] ?? ""}
+                                        onChange={(value) =>
+                                            setFormData({
+                                                ...formData,
+                                                [field.name]: value,
+                                            })
+                                        }
+                                        onRefresh={(newOptions) => handleRefresh(field.name, newOptions)}
+                                    />
+                                )
                             ) : field.type === "textarea" ? (
                                 <textarea
                                     value={formData[field.name] ?? ""}

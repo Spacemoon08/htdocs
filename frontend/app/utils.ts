@@ -9,6 +9,7 @@ export function display(
         kurse: any[];
     }
 ) {
+    // Foreign key references
     if (key === "nr_land")
         return context.countries.find((x) => x.id_country === value)?.country;
     if (key === "nr_lehrbetrieb")
@@ -23,5 +24,31 @@ export function display(
     }
     if (key === "nr_kurs")
         return context.kurse.find((x) => x.id_kurs === value)?.kursthema;
+
+    // Gender display
+    if (key === "geschlecht") {
+        if (value === "m") return "Männlich";
+        if (value === "w") return "Weiblich";
+        if (value === "d") return "Divers";
+        return value;
+    }
+
+    // Date formatting
+    if (key === "birthdate" || key === "start" || key === "ende" ||
+        key === "startdatum" || key === "enddatum") {
+        if (!value) return "";
+        try {
+            const date = new Date(value);
+            return date.toLocaleDateString("de-DE");
+        } catch {
+            return value;
+        }
+    }
+
+    // Number formatting for grades
+    if (key === "note" && value != null) {
+        return Number(value).toFixed(1);
+    }
+
     return value ?? "";
 }
