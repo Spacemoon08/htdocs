@@ -87,7 +87,7 @@ export default function Page() {
                             <Database className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Datenbankverwaltung</h1>
+                            <h1 className="text-3xl font-bold text-gray-900">Lernendenverwaltung</h1>
                             <p className="text-sm text-gray-500">Verwaltung von Lernenden, Kursen und Lehrbetrieben</p>
                         </div>
                     </div>
@@ -124,9 +124,9 @@ export default function Page() {
                     <div className="flex items-center gap-4 flex-wrap">
                         <div className="flex-1 min-w-[300px]">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black" />
                                 <input
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                                     placeholder="Durchsuchen..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
