@@ -1,3 +1,27 @@
+/**
+ * NestedFormModal.tsx
+ *
+ * Lightweight modal for creating or editing a single related entity inline.
+ *
+ * Purpose:
+ * - Opened by SelectWithActions when the user clicks "Neu erstellen" or "Bearbeiten".
+ * - Presents a minimal set of fields relevant to the nested entity.
+ * - Returns the created/updated record via `onSave` so the parent can refresh lists.
+ *
+ * Design philosophy:
+ * - Keep the nested form small and focused to avoid overwhelming the UI.
+ * - Validation is minimal; the backend performs detailed validation.
+ * - After successful save, the parent is responsible for calling the API and
+ *   updating its select options.
+ *
+ * Props:
+ * - view: which entity type to edit (e.g. 'countries', 'lehrbetriebe')
+ * - item: optional; when present the modal operates in edit mode
+ * - onSave: callback when user submits the form
+ * - onCancel: callback to close without saving
+ * - countries/lehrbetriebe/...: optional lists for nested dropdown fields
+ */
+
 import { useState } from "react";
 import { Save, X } from "lucide-react";
 import { ViewType, Field } from "./types";

@@ -1,3 +1,30 @@
+/**
+ * SelectionWithActions.tsx
+ *
+ * A select control with inline create/edit actions for related entities.
+ *
+ * Purpose:
+ * - Provides a dropdown to choose an existing related record.
+ * - Two buttons allow users to quickly create or edit related records without
+ *   leaving the current form.
+ * - When changes are made via the nested modal, the parent is notified so its
+ *   select options stay in sync.
+ *
+ * Props:
+ * - field: Field definition (includes options, valueKey, labelKey, etc.)
+ * - value: currently selected option value
+ * - onChange: callback when user selects a different option
+ * - onRefresh: callback when nested entity list changes (after create/update)
+ * - countries/lehrbetriebe/...: optional lists for populating nested forms
+ *
+ * Behavior:
+ * - "Neu erstellen" button: opens NestedFormModal in create mode (editItem = null)
+ * - "Bearbeiten" button: only appears when a value is selected; opens NestedFormModal
+ *   with the selected record pre-filled
+ * - After successful nested save, calls `handleSaveNested` to update the API and
+ *   refresh the parent's list via `onRefresh`.
+ */
+
 import { useState } from "react";
 import { Edit2, Plus } from "lucide-react";
 import { ViewType, Field } from "./types";
@@ -27,9 +54,14 @@ export function SelectWithActions(props: {
         kurse = []
     } = props;
 
+    // Component state for the nested modal:
+    // - showNestedForm: controls visibility of the NestedFormModal
+    // - editItem: when non-null, the NestedFormModal operates in edit mode
     const [showNestedForm, setShowNestedForm] = useState(false);
     const [editItem, setEditItem] = useState<any>(null);
 
+    // Map field names to their corresponding view (e.g. 'nr_land' -> 'countries')
+    // This tells us which API endpoint and nested form to use.
     const viewMap: Record<string, ViewType> = {
         nr_land: "countries",
         nr_lehrbetrieb: "lehrbetriebe",
@@ -40,17 +72,25 @@ export function SelectWithActions(props: {
 
     const nestedView = viewMap[field.name];
 
+    // ================ HANDLERS ================
+    // handleSaveNested: called when the nested form is submitted.
+    // - Sends the nested data to the API (POST for create, PUT for edit).
+    // - Fetches the updated list and calls onRefresh so FormModal's lists stay in sync.
+    // - Closes the nested modal and resets editItem.
     const handleSaveNested = async (nestedData: any) => {
         try {
             if (editItem) {
+                // UPDATE nested entity
                 await apiCall(
                     `/${nestedView}/${editItem[field.valueKey!]}`,
                     "PUT",
                     nestedData
                 );
             } else {
+                // CREATE new nested entity
                 await apiCall(`/${nestedView}`, "POST", nestedData);
             }
+            // Fetch the updated list and notify the parent
             const updated = await apiCall(`/${nestedView}/all`);
             onRefresh(updated);
             setShowNestedForm(false);
@@ -60,6 +100,7 @@ export function SelectWithActions(props: {
         }
     };
 
+    // handleEdit: opens the nested modal in edit mode with the selected record.
     const handleEdit = () => {
         const selected = field.options?.find(
             (opt: any) => opt[field.valueKey!] == value
