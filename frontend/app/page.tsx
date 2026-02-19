@@ -1,70 +1,71 @@
+"use client"
 /**
- * page.tsx
+ * page.tsx — Single-file app mit sauberen Pfad-URLs
  *
- * Main page component: renders navigation tabs, search bar, data table and modal form.
+ * URL-Schema:
+ *   /lernende              → Lernende-Tab
+ *   /kurse/create          → Kurse-Tab + Create-Modal
+ *   /lernende/5/edit       → Lernende-Tab + Edit-Modal für ID 5
  *
- * Responsibilities:
- * - Initialize and maintain state for the current view and its displayed data.
- * - Load master data (countries, lehrbetriebe, lernende, dozenten, kurse) on component
- *   mount so that select controls in FormModal and SelectWithActions are available.
- * - Load and display the current view's records whenever the `view` state changes.
- * - Provide CRUD operations:
- *   * CREATE: open FormModal with no `item` and POST via apiCall.
- *   * READ: fetch from API and display in table (search filter applied client-side).
- *   * UPDATE: open FormModal with existing `item` and PUT via apiCall.
- *   * DELETE: call apiCall with DELETE method and refresh the view.
- * - After any mutation, refresh the current view's data to reflect server state.
- *
- * Architecture notes:
- * - State is local-only (no Redux, context, or external store).
- * - Search filtering happens on the client (JavaScript array filter).
- * - No data caching; mutations trigger immediate re-fetch for consistency.
- * - FormModal and lists (countries, lehrbetriebe, ...) are passed as props to allow
- *   nested forms to keep lists in sync.
+ * Browser Back/Forward funktioniert, weil jede Aktion router.push() nutzt.
+ * Kein Next.js Routing nötig — die URL wird client-seitig mit usePathname geparsed.
  */
 
-"use client"
-import { useEffect, useState } from "react";
-import {
-    BookOpen,
-    Plus,
-    Search,
-    Database,
-    Edit2,
-    Trash2,
-} from "lucide-react";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { BookOpen, Plus, Search, Database, Edit2, Trash2 } from "lucide-react";
 import { ViewType, DataItem } from "./types";
 import { apiCall, getPrimaryKey } from "./api";
 import { viewConfig } from "./config";
 import { display } from "./utils";
 import { FormModal } from "./FormModal";
 
-export default function Page() {
-    // ================ STATE ================
-    // `view`: currently selected entity type (e.g. 'lernende', 'kurse')
-    // `data`: array of records for the current view (loaded from API)
-    const [view, setView] = useState<ViewType>("lernende");
+// ─── URL Parser ────────────────────────────────────────────────────────────────
+// Liest den aktuellen Pfad und gibt view, editId und create zurück.
+//
+// /lernende           → { view: "lernende" }
+// /kurse/create       → { view: "kurse", create: true }
+// /lernende/5/edit    → { view: "lernende", editId: "5" }
+//
+function parsePath(pathname: string): {
+    view: ViewType;
+    editId?: string;
+    create?: boolean;
+} {
+    const parts = pathname.replace(/^\//, "").split("/");
+    // parts[0] = view, parts[1] = id oder "create", parts[2] = "edit"
+    const view = (parts[0] in viewConfig ? parts[0] : "lernende") as ViewType;
+
+    if (parts[1] === "create") {
+        return { view, create: true };
+    }
+    if (parts[2] === "edit" && parts[1]) {
+        return { view, editId: parts[1] };
+    }
+    return { view };
+}
+
+// ─── Inner Component ──────────────────────────────────────────────────────────
+function PageInner() {
+    const router = useRouter();
+    const pathname = usePathname();
+
+    // URL auslesen — wird bei jeder Navigation automatisch neu berechnet
+    const { view, editId, create } = parsePath(pathname);
+
+    // ── State ──
     const [data, setData] = useState<DataItem[]>([]);
-    
-    // Form modal state:
-    // `edit`: when non-null, the FormModal opens in edit mode with this record's data.
-    // `showForm`: controls visibility of FormModal (true = shown, false = hidden)
-    // `search`: user's input in the search box; used to filter `data` client-side.
     const [edit, setEdit] = useState<DataItem | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [search, setSearch] = useState("");
 
-    // Master data lists used by FormModal and SelectWithActions for populating dropdowns
-    // and enabling inline create/edit of related entities.
     const [countries, setCountries] = useState<any[]>([]);
     const [lehrbetriebe, setLehrbetriebe] = useState<any[]>([]);
     const [lernende, setLernende] = useState<any[]>([]);
     const [dozenten, setDozenten] = useState<any[]>([]);
     const [kurse, setKurse] = useState<any[]>([]);
 
-    // ================ EFFECTS ================
-    // Load master data on component mount ([]).
-    // These lists are needed immediately by FormModal to populate select controls.
+    // ── Stammdaten beim Start laden ──
     useEffect(() => {
         Promise.all([
             apiCall("/countries/all"),
@@ -81,57 +82,87 @@ export default function Page() {
         });
     }, []);
 
-    // Load (or reload) records for the current view whenever `view` changes.
-    // This effect runs after the user clicks a navigation tab to switch views.
+    // ── Daten für aktive View laden (bei Tab-Wechsel) ──
     useEffect(() => {
+        setData([]);
         apiCall(`/${view}/all`).then(setData);
     }, [view]);
 
-    // ================ HANDLERS ================
-    // save(formData): called when FormModal's "Speichern" button is clicked.
-    // - If `edit` is set, performs a PUT request to update the record (sends the PK in URL).
-    // - If `edit` is null, performs a POST request to create a new record.
-    // - After success, closes the modal and refreshes the view's data.
-    async function save(formData: any) {
-        if (edit) {
-            // UPDATE: PUT /<view>/<id> with the form data.
-            await apiCall(
-                `/${view}/${(edit as any)[getPrimaryKey(view)]}`,
-                "PUT",
-                formData
-            );
-        } else {
-            // CREATE: POST /<view> with the form data.
-            await apiCall(`/${view}`, "POST", formData);
+    // ── Create-Modal öffnen wenn URL /create enthält ──
+    useEffect(() => {
+        if (create) {
+            setEdit(null);
+            setShowForm(true);
         }
+    }, [create]);
+
+    // ── Edit-Modal öffnen sobald Daten geladen und editId in URL ──
+    useEffect(() => {
+        if (!editId || data.length === 0) return;
+        const pk = getPrimaryKey(view);
+        const item = data.find((d: any) => String(d[pk]) === editId);
+        if (item) {
+            setEdit(item);
+            setShowForm(true);
+        }
+    }, [data, editId]);
+
+    // ── Modal schliessen wenn URL kein create/edit mehr enthält ──
+    // Reagiert auf Browser-Back, Abbrechen-Button, und direkte URL-Änderungen
+    useEffect(() => {
+        if (!create && !editId) {
+            setShowForm(false);
+            setEdit(null);
+        }
+    }, [create, editId]);
+
+    // ── Handler ──
+    function handleViewChange(newView: ViewType) {
+        setSearch("");
+        router.push(`/${newView}`);
+    }
+
+    function handleEdit(row: DataItem) {
+        const pk = getPrimaryKey(view);
+        const id = (row as any)[pk];
+        router.push(`/${view}/${id}/edit`);
+    }
+
+    function handleNewEntry() {
+        router.push(`/${view}/create`);
+    }
+
+    function handleCloseForm() {
+        // Modal sofort schliessen
         setShowForm(false);
         setEdit(null);
-        // After a successful save (create or update), refresh the view's data list.
+        // URL zurücksetzen — replace damit kein extra History-Eintrag entsteht
+        router.replace(`/${view}`);
+    }
+
+    async function save(formData: any) {
+        if (edit) {
+            await apiCall(`/${view}/${(edit as any)[getPrimaryKey(view)]}`, "PUT", formData);
+        } else {
+            await apiCall(`/${view}`, "POST", formData);
+        }
+        router.replace(`/${view}`);
         apiCall(`/${view}/all`).then(setData);
     }
 
-    // del(id): called when the delete button is clicked for a record.
-    // - Sends DELETE request to /<view>/<id>.
-    // - After success, refreshes the view's data.
     async function del(id: number) {
         await apiCall(`/${view}/${id}`, "DELETE");
-        // After deletion, refresh the view to reflect the server state.
         apiCall(`/${view}/all`).then(setData);
     }
 
-    // ================ DISPLAY LOGIC ================
-    // filtered: Apply client-side search filter by converting each record to JSON
-    // and checking if it contains the search string (case-insensitive).
+    // ── Anzeige ──
     const filtered = data.filter((d) =>
         JSON.stringify(d).toLowerCase().includes(search.toLowerCase())
     );
-
-    // currentView and IconComponent: Look up the configuration (label, icon, color)
-    // for the active view from `viewConfig`.
     const currentView = viewConfig[view];
     const IconComponent = currentView.icon;
 
-    // ================ RENDER ================
+    // ── Render ──
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
             {/* Header */}
@@ -147,7 +178,7 @@ export default function Page() {
                         </div>
                     </div>
 
-                    {/* Navigation */}
+                    {/* Navigation Tabs */}
                     <div className="flex gap-3 flex-wrap">
                         {(Object.entries(viewConfig) as Array<[ViewType, typeof viewConfig[ViewType]]>).map(([id, config]) => {
                             const Icon = config.icon;
@@ -155,7 +186,7 @@ export default function Page() {
                             return (
                                 <button
                                     key={id}
-                                    onClick={() => setView(id)}
+                                    onClick={() => handleViewChange(id as ViewType)}
                                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 ${
                                         isActive
                                             ? "text-white shadow-md scale-105"
@@ -172,9 +203,9 @@ export default function Page() {
                 </div>
             </div>
 
-            {/* Main Content */}
+            {/* Inhalt */}
             <div className="max-w-7xl mx-auto px-6 py-8">
-                {/* Controls */}
+                {/* Suchleiste + Neu-Button */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
                     <div className="flex items-center gap-4 flex-wrap">
                         <div className="flex-1 min-w-[300px]">
@@ -190,10 +221,7 @@ export default function Page() {
                         </div>
                         <button
                             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
-                            onClick={() => {
-                                setEdit(null);
-                                setShowForm(true);
-                            }}
+                            onClick={handleNewEntry}
                         >
                             <Plus className="w-5 h-5" />
                             Neu erstellen
@@ -201,9 +229,8 @@ export default function Page() {
                     </div>
                 </div>
 
-                {/* Data Display */}
+                {/* Tabelle */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    {/* View Header */}
                     <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                         <div className="flex items-center gap-3">
                             <IconComponent className="w-6 h-6 text-gray-700" />
@@ -226,65 +253,48 @@ export default function Page() {
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
-                                <tr>
-                                    {Object.keys(filtered[0]).map((k) => (
-                                        <th
-                                            key={k}
-                                            className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
-                                        >
-                                            {k}
+                                    <tr>
+                                        {Object.keys(filtered[0]).map((k) => (
+                                            <th key={k} className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                                {k}
+                                            </th>
+                                        ))}
+                                        <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                            Aktionen
                                         </th>
-                                    ))}
-                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Aktionen
-                                    </th>
-                                </tr>
+                                    </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                {filtered.map((row: any, index: number) => (
-                                    <tr
-                                        key={row[getPrimaryKey(view)] || `row-${index}`}
-                                        className="hover:bg-gray-50 transition-colors duration-150"
-                                    >
-                                        {Object.entries(row).map(([k, v]) => (
-                                            <td
-                                                key={k}
-                                                className="px-6 py-4 text-sm text-gray-900"
-                                            >
-                                                {display(k, v, {
-                                                    countries,
-                                                    lehrbetriebe,
-                                                    lernende,
-                                                    dozenten,
-                                                    kurse,
-                                                })}
+                                    {filtered.map((row: any, index: number) => (
+                                        <tr
+                                            key={row[getPrimaryKey(view)] || `row-${index}`}
+                                            className="hover:bg-gray-50 transition-colors duration-150"
+                                        >
+                                            {Object.entries(row).map(([k, v]) => (
+                                                <td key={k} className="px-6 py-4 text-sm text-gray-900">
+                                                    {display(k, v, { countries, lehrbetriebe, lernende, dozenten, kurse })}
+                                                </td>
+                                            ))}
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleEdit(row)}
+                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-150"
+                                                        title="Bearbeiten"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => del(row[getPrimaryKey(view)])}
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150"
+                                                        title="Löschen"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </td>
-                                        ))}
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button
-                                                    onClick={() => {
-                                                        setEdit(row);
-                                                        setShowForm(true);
-                                                    }}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-150"
-                                                    title="Bearbeiten"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        del(row[getPrimaryKey(view)])
-                                                    }
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150"
-                                                    title="Löschen"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
@@ -292,12 +302,13 @@ export default function Page() {
                 </div>
             </div>
 
+            {/* Modal */}
             {showForm && (
                 <FormModal
                     view={view}
                     item={edit}
                     onSave={save}
-                    onCancel={() => setShowForm(false)}
+                    onCancel={handleCloseForm}
                     countries={countries}
                     lehrbetriebe={lehrbetriebe}
                     lernende={lernende}
@@ -311,5 +322,14 @@ export default function Page() {
                 />
             )}
         </div>
+    );
+}
+
+// Suspense-Wrapper nötig weil usePathname ein Client-Hook ist
+export default function Page() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-500">Laden...</div>}>
+            <PageInner />
+        </Suspense>
     );
 }
